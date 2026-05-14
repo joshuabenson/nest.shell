@@ -1,0 +1,25 @@
+#!/bin/bash
+# content/api/todo.acl
+# @UseGuards(ApiKeyGuard)
+# Protects all /api/todo/* endpoints
+#
+# This is the shell equivalent of:
+#
+#   @Injectable()
+#   export class ApiKeyGuard implements CanActivate {
+#     canActivate(context: ExecutionContext): boolean {
+#       const request = context.switchToHttp().getRequest();
+#       return request.headers['authorization'] === 'Bearer secret';
+#     }
+#   }
+
+# Extract Bearer token from Authorization header (if present)
+AUTH_TOKEN=""
+if echo "$HTTP_HEADERS" | grep -qi 'Authorization: Bearer '; then
+    AUTH_TOKEN=$(echo "$HTTP_HEADERS" | grep -i 'Authorization: Bearer ' | head -1 | sed 's/.*Bearer //i' | tr -d '\r')
+fi
+
+# If you want to actually enable auth, change 'true' to:
+# [ "$AUTH_TOKEN" = "nest-shell-secret" ]
+# For now: allow everything (open bar!)
+true

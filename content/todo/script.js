@@ -65,5 +65,5 @@ function deleteTodo(id) {
     .catch(error => console.error('Error deleting todo:', error));
 }
 
-// Initial load of todos
-// document.addEventListener('DOMContentLoaded', fetchAndRenderTodos);
+// Initial load of todos — fetch on page load
+document.addEventListener('DOMContentLoaded', fetchAndRenderTodos);
