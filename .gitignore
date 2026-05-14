@@ -1,0 +1,14 @@
+# Build artifacts
+nestsrv
+nest-prefork
+
+# Runtime generated
+cache/
+*.log
+
+# Database (uncomment if you want to ignore the SQLite DB)
+# app.db
+
+# OS noise
+.DS_Store
+Thumbs.db
