@@ -1,0 +1,40 @@
+{
+  "name": "nest.shell",
+  "version": "0.0.1-shell",
+  "description": "A progressive Bash framework for building efficient, reliable and scalable server-side applications. Heavily inspired by NestJS. Like, heavily.",
+  "scripts": {
+    "start": "bash nest.sh",
+    "start:dev": "bash nest.sh --watch",
+    "start:prod": "MAX_REQUESTS_PER_MIN=999999 bash nest.sh",
+    "build": "cc -O3 -s -o nestsrv nestsrv.c",
+    "build:prefork": "cc -O3 -s -o nest-prefork nest-prefork.c",
+    "test": "bash test-suite.sh",
+    "test:bench": "bash benchmark.sh",
+    "lint": "shellcheck nest.sh utils/*.sh content/api/**/*.api.sh",
+    "generate": "bash nest generate"
+  },
+  "dependencies": {
+    "bash": ">=4.0",
+    "socat": "*",
+    "sqlite3": "*",
+    "jq": "*",
+    "coreutils": "*"
+  },
+  "devDependencies": {
+    "apache2-utils": "*",
+    "shellcheck": "*",
+    "inotify-tools": "*",
+    "gcc": "*"
+  },
+  "jest": {
+    "testRunner": "bash test-suite.sh",
+    "coverage": "echo '100% (it\\'s bash, what did you expect)'"
+  },
+  "engines": {
+    "bash": ">=4.0",
+    "unix": "literally anything"
+  },
+  "keywords": ["bash", "web", "framework", "nestjs", "parody", "code-golf"],
+  "license": "BSD",
+  "author": "someone who thought 'what if nestjs but bash'"
+}

@@ -1,0 +1,285 @@
+#!/bin/bash
+# ═══════════════════════════════════════════════════════════
+#  nest  -  the nest.shell CLI (100% compatible with NestJS*)
+#  * may contain traces of bash
+# ═══════════════════════════════════════════════════════════
+
+BOLD='\033[1m'; GREEN='\033[0;32m'; CYAN='\033[0;36m'; RESET='\033[0m'
+
+# Try to find the project root
+NEST_ROOT="$(dirname "$(realpath "$0" 2>/dev/null || echo "$0")")"
+
+usage() {
+    cat << 'EOF'
+
+  nest.shell  -  the Bash framework for people who think node_modules 
+  shouldn't weigh more than the actual application.
+
+  Commands:
+    nest new <name>           Scaffold a new nest.shell project
+    nest generate <type> <name>  Generate a new module/controller/service
+    nest start                Start the server
+    nest start --watch        Start in dev mode (auto-reload)
+    nest build                Compile the C optimizations
+    nest test                 Run the test suite
+    nest info                 Show project info
+
+  Generate types:
+    module              content/<name>/ with index.html + script.sh
+    controller <name>   content/api/<name>/ with CRUD .api.sh files
+    service <name>      utils/<name>.sh
+    guard <name>        A .acl guard file for a route
+    pipe <name>         A validation script in utils/
+
+EOF
+}
+
+# ─── nest new ─────────────────────────────────────────────
+cmd_new() {
+    local name="${1:-nest-shell-app}"
+    echo -e "${GREEN}✨ Creating new nest.shell project: ${BOLD}$name${RESET}"
+    mkdir -p "$name"/{content/{home,api/todo,api/guestbook,.well-known},utils,cache}
+    
+    # Copy the framework
+    cp "$NEST_ROOT"/nest.sh "$name/"
+    cp "$NEST_ROOT"/utils/*.sh "$name/utils/"
+    cp "$NEST_ROOT"/index.js "$name/content/" 2>/dev/null || true
+    
+    # Create a starter home page
+    cat > "$name/content/home/index.html" << 'PAGE'
+<div class="home-widget bg-white shadow-md rounded-lg p-8 text-center">
+    <div class="text-6xl mb-4">🐚</div>
+    <h1 class="text-4xl font-bold text-gray-800 mb-3">nest.shell</h1>
+    <p class="text-gray-600">Your new project is ready!</p>
+    <p class="text-sm text-gray-400 mt-4">Edit <code>content/home/index.html</code> to get started</p>
+</div>
+PAGE
+
+    cat > "$name/content/home/index.js" << 'JS'
+function init_home(widget) {
+    console.log('nest.shell module loaded!');
+}
+JS
+
+    # Starter API
+    mkdir -p "$name/content/api/hello"
+    cat > "$name/content/api/hello/list.api.sh" << 'API'
+#!/bin/bash
+source utils/logs.sh
+source utils/respond.sh
+respond json '{"message":"Hello from nest.shell!","timestamp":"'"$(date)"'"}'
+API
+    chmod +x "$name/content/api/hello/list.api.sh"
+
+    # package.json
+    cat > "$name/package.json" << 'PKG'
+{
+  "name": "NAME_PLACEHOLDER",
+  "version": "0.0.1-shell",
+  "scripts": {
+    "start": "bash nest.sh",
+    "start:dev": "bash nest.sh --watch",
+    "test": "bash test-suite.sh"
+  },
+  "dependencies": {
+    "bash": ">=4.0"
+  }
+}
+PKG
+    sed -i "s/NAME_PLACEHOLDER/$name/" "$name/package.json"
+
+    # README
+    cat > "$name/README.md" << 'README'
+# NAME_PLACEHOLDER
+
+Powered by [nest.shell](https://github.com/yourusername/nest.shell)  -  the Bash framework.
+
+```bash
+npm start          # or: bash nest.sh
+npm run start:dev  # or: bash nest.sh --watch
+```
+README
+    sed -i "s/NAME_PLACEHOLDER/$name/" "$name/README.md"
+
+    # Copy test suite
+    cp "$NEST_ROOT"/test-suite.sh "$name/" 2>/dev/null || true
+
+    chmod +x "$name/nest.sh" "$name/utils"/*.sh 2>/dev/null
+    
+    echo ""
+    echo -e "  ${BOLD}cd $name${RESET}"
+    echo -e "  ${BOLD}npm start${RESET}    (or: ${CYAN}bash nest.sh${RESET})"
+    echo ""
+    echo -e "  ${GREEN}nest.shell has no node_modules. You're welcome.${RESET}"
+}
+
+# ─── nest generate ────────────────────────────────────────
+cmd_generate() {
+    local type="$1"
+    local name="$2"
+
+    if [ -z "$name" ]; then
+        echo "Usage: nest generate <type> <name>"
+        echo "Types: module, controller, service, guard, pipe"
+        return 1
+    fi
+
+    case "$type" in
+        module)
+            mkdir -p "content/$name"
+            cat > "content/$name/index.html" << 'HTML'
+<div class="bg-white shadow-md rounded-lg p-6">
+    <h1 class="text-2xl font-bold mb-4">MODULE_NAME</h1>
+    {{content}}
+</div>
+HTML
+            sed -i "s/MODULE_NAME/$name/" "content/$name/index.html"
+            cat > "content/$name/script.js" << 'JS'
+// MODULE_NAME module  -  client-side logic
+function init_MODULE_VAR(widget) {
+    console.log('MODULE_NAME module mounted!');
+}
+JS
+            sed -i "s/MODULE_NAME/$name/g; s/MODULE_VAR/${name//\//_}/g" "content/$name/script.js"
+            echo -e "${GREEN}✓${RESET} Module created: content/$name/"
+            echo "   → http://localhost:8080/$name"
+            ;;
+
+        controller)
+            local route="${name#api/}"
+            route="${route#/}"
+            mkdir -p "content/api/$route"
+            
+            # Generate CRUD endpoints (NestJS style!)
+            cat > "content/api/$route/list.api.sh" << 'API'
+#!/bin/bash
+source utils/logs.sh
+source utils/respond.sh
+log "CONTROLLER_NAME: list"
+respond json '{"data":[],"controller":"CONTROLLER_NAME"}'
+API
+
+            cat > "content/api/$route/create.api.sh" << 'API'
+#!/bin/bash
+source utils/logs.sh
+source utils/respond.sh
+source utils/escape.sh
+log "CONTROLLER_NAME: create"
+post_data=$(cat)
+respond json '{"success":true,"controller":"CONTROLLER_NAME"}'
+API
+
+            cat > "content/api/$route/get.api.sh" << 'API'
+#!/bin/bash
+source utils/logs.sh
+source utils/respond.sh
+log "CONTROLLER_NAME: get"
+respond json '{"id":"PARAM","controller":"CONTROLLER_NAME"}'
+API
+
+            sed -i "s/CONTROLLER_NAME/$route/g" "content/api/$route"/*.api.sh
+            chmod +x "content/api/$route"/*.api.sh
+            echo -e "${GREEN}✓${RESET} Controller created: content/api/$route/"
+            echo "   → GET  /api/$route/list"
+            echo "   → POST /api/$route/create"
+            echo "   → GET  /api/$route/get"
+            ;;
+
+        service)
+            mkdir -p utils 2>/dev/null
+            cat > "utils/$name.sh" << 'SH'
+#!/bin/bash
+# utils/SERVICE_NAME.sh  -  SERVICE_NAME service
+# @Injectable()  -  just source this file
+
+SERVICE_NAME_findAll() {
+    echo "[]"
+}
+
+SERVICE_NAME_create() {
+    echo '{"success":true}'
+}
+SH
+            sed -i "s/SERVICE_NAME/$name/g" "utils/$name.sh"
+            chmod +x "utils/$name.sh"
+            echo -e "${GREEN}✓${RESET} Service created: utils/$name.sh"
+            echo "   Source in your controllers: source utils/$name.sh"
+            ;;
+
+        guard)
+            cat > "content/$name.acl" << 'ACL'
+# nest.shell ACL guard  -  @UseGuards(NAME)
+# Return 0 to allow, 1 to deny
+# Access to: $HTTP_METHOD $HTTP_ROUTE
+# Auth header: $HTTP_AUTHORIZATION
+
+# Example: only allow GET
+[ "$HTTP_METHOD" = "GET" ]
+ACL
+            echo -e "${GREEN}✓${RESET} Guard created: content/$name.acl"
+            echo "   Apply with: @UseGuards($name) → nest.sh checks this file"
+            ;;
+
+        pipe)
+            cat > "utils/$name.pipe.sh" << 'PIPE'
+#!/bin/bash
+# utils/PIPE_NAME.pipe.sh  -  PIPE_NAME validation pipe
+# @UsePipes(PIPE_NAME)  -  transforms/validates input
+# Reads stdin, outputs validated data or returns 1
+
+pipe_PIPE_NAME() {
+    local input="$1"
+    # Transform/validate here
+    echo "$input"
+}
+PIPE
+            sed -i "s/PIPE_NAME/$name/g" "utils/$name.pipe.sh"
+            chmod +x "utils/$name.pipe.sh"
+            echo -e "${GREEN}✓${RESET} Pipe created: utils/$name.pipe.sh"
+            ;;
+            
+        *)
+            echo "Unknown type: $type"
+            echo "Try: module, controller, service, guard, pipe"
+            return 1
+            ;;
+    esac
+}
+
+# ─── nest info ───────────────────────────────────────────
+cmd_info() {
+    echo -e "${BOLD}nest.shell project info${RESET}"
+    echo ""
+    echo "  Framework version:  $(grep -c '#' nest.sh 2>/dev/null || echo '?') lines of bash"
+    echo "  Content routes:     $(find content -name 'index.html' 2>/dev/null | wc -l) modules"
+    echo "  API endpoints:      $(find content -name '*.api.sh' 2>/dev/null | wc -l)"
+    echo "  Services:           $(find utils -name '*.sh' ! -name 'logs.sh' ! -name 'respond.sh' ! -name 'escape.sh' ! -name 'security.sh' 2>/dev/null | wc -l)"
+    echo "  Guards:             $(find content -name '*.acl' 2>/dev/null | wc -l)"
+    echo "  Database:           $(file app.db 2>/dev/null || echo 'not initialized')"
+    echo "  node_modules:       absent (by design)"
+    echo ""
+    echo "  Start:              npm start"
+    echo "  Dev mode:           npm run start:dev"
+    echo "  Tests:              npm test"
+    echo "  Build (C optimizations): npm run build"
+}
+
+# ─── Main ─────────────────────────────────────────────────
+case "${1:-}" in
+    new)        shift; cmd_new "$@" ;;
+    g|generate) shift; cmd_generate "$@" ;;
+    start)     shift; exec bash "$NEST_ROOT/nest.sh" "$@" ;;
+    build)     
+        echo -e "${GREEN}Compiling C optimizations...${RESET}"
+        cc -O3 -s -o "$NEST_ROOT/nestsrv" "$NEST_ROOT/nestsrv.c" && echo "  ✓ nestsrv built" || echo "  ✗ nestsrv failed"
+        cc -O3 -s -o "$NEST_ROOT/nest-prefork" "$NEST_ROOT/nest-prefork.c" 2>/dev/null && echo "  ✓ nest-prefork built" || true
+        ;;
+    test)      
+        cd "$NEST_ROOT" && exec bash test-suite.sh ;;
+    info)      cmd_info ;;
+    -h|--help|"") usage ;;
+    *)         
+        # Allow passing through to nest.sh (nest start --watch, etc.)
+        exec bash "$NEST_ROOT/nest.sh" "$@"
+        ;;
+esac

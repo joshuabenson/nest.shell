@@ -1,5 +1,24 @@
-<div class="home-widget">
-  <h1>Home</h1>
-  <p>Welcome to the home page</p>
-  <div id="counter"></div>
+<div class="home-widget bg-white shadow-md rounded-lg p-8 text-center">
+    <div class="text-6xl mb-4">🐚</div>
+    <h1 class="text-4xl font-bold text-gray-800 mb-3">nest.shell</h1>
+    <p class="text-lg text-gray-600 mb-2">A web framework written entirely in Bash</p>
+    <p class="text-sm text-gray-400 mb-8">Because why not?</p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md mx-auto">
+        <a href="/todo" class="block bg-blue-50 hover:bg-blue-100 rounded-lg p-4 transition border border-blue-100">
+            <div class="text-2xl mb-1">✅</div>
+            <div class="font-semibold text-blue-700">Todo List</div>
+            <div class="text-xs text-blue-500">Full CRUD demo</div>
+        </a>
+        <a href="/guestbook" class="block bg-green-50 hover:bg-green-100 rounded-lg p-4 transition border border-green-100">
+            <div class="text-2xl mb-1">📖</div>
+            <div class="font-semibold text-green-700">Guestbook</div>
+            <div class="text-xs text-green-500">Leave a message!</div>
+        </a>
+    </div>
+
+    <div id="counter" class="mt-8 text-gray-600"></div>
+    <div class="mt-4 text-xs text-gray-400">
+        Server uptime: <span id="uptime">calculating...</span>
+    </div>
 </div>

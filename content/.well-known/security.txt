@@ -1,0 +1,8 @@
+# nest.shell security information
+Contact: https://github.com/yourusername/nest.shell/security
+Expires: 2027-12-31T23:59:59Z
+Preferred-Languages: en
+Canonical: https://nest.shell/.well-known/security.txt
+Policy: https://nest.shell/security-policy
+Hiring: https://nest.shell/jobs
+Acknowledgments: https://nest.shell/hall-of-fame

@@ -1,7 +1,9 @@
 #!/bin/bash
+source utils/escape.sh
 
 echo "<ul id='todo-list' class='mt-4'>"
 sqlite3 "./app.db" "SELECT id, task, completed FROM todos ORDER BY id DESC" | while IFS='|' read -r id task completed; do
+    safe_task=$(html_escape "$task")
     completed_class=""
     toggle_text="Complete"
     if [ "$completed" = "1" ]; then
@@ -10,7 +12,7 @@ sqlite3 "./app.db" "SELECT id, task, completed FROM todos ORDER BY id DESC" | wh
     fi
     echo "<li class='flex items-center justify-between p-2 border-b'>"
     echo "  <span class='$completed_class'>"
-    echo "    $task"
+    echo "    $safe_task"
     echo "  </span>"
     echo "  <div>"
     echo "    <button onclick='toggleTodo($id)' class='text-blue-500 hover:text-blue-700 mr-2'>"
